@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Ticker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .ticker-container {
+            width: 100vw;
+            height: 80px;
+            background: #FFD700;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-wrap {
+            display: flex;
+            animation: scroll 60s linear infinite;
+            will-change: transform;
+        }
+
+        .ticker-item {
+            flex-shrink: 0;
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+        }
+
+        .market-question {
+            font-size: 18px;
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .market-probability {
+            font-size: 22px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.1);
+            color: #000000;
+        }
+
+        .market-probability.high {
+            background: rgba(0, 128, 0, 0.2);
+            color: #006400;
+        }
+
+        .market-probability.low {
+            background: rgba(139, 0, 0, 0.2);
+            color: #8B0000;
+        }
+
+        .separator {
+            color: rgba(0, 0, 0, 0.4);
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        @keyframes scroll {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: black;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ticker-container">
+        <div class="loading">Loading markets...</div>
+        <div class="ticker-wrap" id="ticker"></div>
+    </div>
+
+    <script>
+        const SPORTS_KEYWORDS = [
+            'nfl', 'nba', 'mlb', 'nhl', 'mls', 'ufc', 'fifa', 'uefa', 'premier league',
+            'super bowl', 'world series', 'playoffs', 'championship', 'soccer', 'football',
+            'basketball', 'baseball', 'hockey', 'tennis', 'golf', 'boxing', 'mma',
+            'ncaa', 'college football', 'college basketball', 'formula 1', 'f1', 'nascar',
+            'cricket', 'rugby', 'volleyball', 'esports', 'league of legends', 'dota'
+        ];
+
+        function isSportsBet(question) {
+            const lowerQuestion = question.toLowerCase();
+            return SPORTS_KEYWORDS.some(keyword => lowerQuestion.includes(keyword));
+        }
+
+        function getProbabilityClass(prob) {
+            if (prob >= 70) return 'high';
+            if (prob <= 30) return 'low';
+            return '';
+        }
+
+        async function fetchMarkets() {
+            try {
+                const response = await fetch('https://corsproxy.io/?https://gamma-api.polymarket.com/markets?limit=100&closed=false');
+                const markets = await response.json();
+                
+                // Debug: log first market to see structure
+                if (markets.length > 0) {
+                    console.log('Sample market data:', markets[0]);
+                }
+                
+                // Filter out sports and get top 20 by volume
+                const nonSportsMarkets = markets
+                    .filter(market => !isSportsBet(market.question))
+                    .sort((a, b) => (b.volume || 0) - (a.volume || 0))
+                    .slice(0, 20);
+
+                return nonSportsMarkets;
+            } catch (error) {
+                console.error('Error fetching markets:', error);
+                return [];
+            }
+        }
+
+        function createTickerItem(market) {
+            // Try multiple possible probability fields based on Polymarket API docs
+            let probability = 0;
+            
+            // Check for lastTradePrice (0-1 format)
+            if (typeof market.lastTradePrice === 'number') {
+                probability = Math.round(market.lastTradePrice * 100);
+            }
+            // Check for last_trade_price
+            else if (typeof market.last_trade_price === 'number') {
+                probability = Math.round(market.last_trade_price * 100);
+            }
+            // Check for outcomePrices array
+            else if (market.outcomePrices && Array.isArray(market.outcomePrices) && market.outcomePrices.length > 0) {
+                probability = Math.round(parseFloat(market.outcomePrices[0]) * 100);
+            }
+            // Check for outcome_prices string
+            else if (typeof market.outcome_prices === 'string') {
+                const prices = market.outcome_prices.split(',');
+                probability = Math.round(parseFloat(prices[0]) * 100);
+            }
+            // Fallback
+            else {
+                probability = 50;
+                console.log('Could not find price for market:', market.question, market);
+            }
+            
+            return `
+                <div class="ticker-item">
+                    <span class="market-question">${market.question}</span>
+                    <span class="market-probability ${getProbabilityClass(probability)}">${probability}%</span>
+                    <span class="separator">•</span>
+                </div>
+            `;
+        }
+
+        async function initTicker() {
+            const markets = await fetchMarkets();
+            const ticker = document.getElementById('ticker');
+            const loading = document.querySelector('.loading');
+            
+            if (markets.length === 0) {
+                loading.textContent = 'No markets available';
+                return;
+            }
+
+            loading.style.display = 'none';
+
+            // Create ticker content - duplicate for seamless loop
+            const tickerHTML = markets.map(createTickerItem).join('');
+            ticker.innerHTML = tickerHTML + tickerHTML;
+        }
+
+        // Initialize ticker
+        initTicker();
+
+        // Refresh every 2 minutes
+        setInterval(initTicker, 120000);
+    </script>
+</body>
+</html>
