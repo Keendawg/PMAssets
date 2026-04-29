@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eventual — Market Control Panel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+
+  :root {
+    --yellow: #FFF30A;
+    --black: #000;
+    --grey-dark: #111;
+    --grey-mid: #222;
+    --grey-border: #333;
+    --grey-text: #888;
+    --active-bg: #FFF30A;
+    --active-text: #000;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--grey-border);
+    padding-bottom: 16px;
+  }
+
+  .wordmark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.1em;
+    color: var(--yellow);
+  }
+
+  .subtitle {
+    font-size: 11px;
+    color: var(--grey-text);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    font-size: 11px;
+    color: var(--grey-text);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--grey-text);
+    transition: background 0.3s;
+  }
+
+  .status-dot.live {
+    background: #00ff88;
+    box-shadow: 0 0 6px #00ff88;
+  }
+
+  .status-label {
+    transition: color 0.3s;
+  }
+
+  .active-slug {
+    color: var(--yellow);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+  }
+
+  /* Market list */
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--grey-text);
+    margin-bottom: 10px;
+  }
+
+  .market-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 32px;
+  }
+
+  .market-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    background: var(--grey-dark);
+    border: 1px solid var(--grey-border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+    width: 100%;
+  }
+
+  .market-btn:hover {
+    border-color: var(--yellow);
+    background: #0d0d00;
+  }
+
+  .market-btn.active {
+    background: var(--yellow);
+    border-color: var(--yellow);
+  }
+
+  .market-btn.active .market-title {
+    color: var(--black);
+  }
+
+  .market-btn.active .market-url {
+    color: #444;
+  }
+
+  .market-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1.4;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .market-url {
+    font-size: 10px;
+    color: var(--grey-text);
+    letter-spacing: 0.03em;
+    word-break: break-all;
+  }
+
+  /* Custom URL input */
+  .custom-section {
+    margin-bottom: 24px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--grey-dark);
+    border: 1px solid var(--grey-border);
+    border-radius: 4px;
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--yellow);
+  }
+
+  input[type="text"]::placeholder {
+    color: var(--grey-text);
+  }
+
+  .btn-load {
+    background: var(--grey-mid);
+    border: 1px solid var(--grey-border);
+    border-radius: 4px;
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-load:hover {
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--black);
+  }
+
+  /* Clear button */
+  .btn-clear {
+    background: none;
+    border: 1px solid var(--grey-border);
+    border-radius: 4px;
+    color: var(--grey-text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .btn-clear:hover {
+    border-color: #ff4444;
+    color: #ff4444;
+  }
+
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--grey-border);
+    font-size: 10px;
+    color: var(--grey-text);
+    letter-spacing: 0.06em;
+  }
+
+  .note {
+    font-size: 10px;
+    color: var(--grey-text);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  .note a {
+    color: var(--yellow);
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark">EVENTUAL</div>
+  <div class="subtitle">Market Control Panel</div>
+</header>
+
+<div class="status-bar">
+  <div class="status-dot" id="status-dot"></div>
+  <span class="status-label" id="status-label">NO MARKET ACTIVE</span>
+  <span class="active-slug" id="active-slug"></span>
+</div>
+
+<div class="section-label">Preloaded Markets</div>
+<div class="market-list" id="market-list"></div>
+
+<div class="custom-section">
+  <div class="section-label">Custom Market URL</div>
+  <div class="input-row">
+    <input type="text" id="custom-url" placeholder="james-comey-arrested-by-april-28-647-577">
+    <button class="btn-load" onclick="loadCustom()">Load</button>
+  </div>
+  <div class="note">
+    Paste the short market ID from Polymarket's embed code, or the full outcome URL.<br>
+    To get the ID: on any market page click the <strong>&lt;/&gt;</strong> embed icon → copy the <code>id=</code> value.
+  </div>
+</div>
+
+<div class="footer-row">
+  <span>Display page must be open in OBS Browser Source at 1920×1080</span>
+  <button class="btn-clear" onclick="clearMarket()">Clear Display</button>
+</div>
+
+<script>
+  const STORAGE_KEY = 'eventual_active_market';
+
+  // Preloaded markets — add/remove as needed
+  // NOTE: Polymarket embeds require single-outcome URLs, not event pages.
+  // For multi-outcome events, use the specific outcome URL from the event page.
+  const MARKETS = [
+    {
+      title: 'James Comey arrested by May 15',
+      url: 'james-comey-arrested-by-may-15-630-577',
+    },
+    {
+      title: 'Which company has the best AI model — end of May?',
+      url: 'which-company-has-the-best-ai-model-end-of-may',
+    },
+    {
+      title: 'Trump announces end of military ops against Iran — March 31',
+      url: 'trump-announces-end-of-military-operations-against-iran-by-march-31',
+    },
+  ];
+
+  function renderList() {
+    const active = localStorage.getItem(STORAGE_KEY) || '';
+    const list = document.getElementById('market-list');
+    list.innerHTML = '';
+
+    MARKETS.forEach((m, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'market-btn' + (active === m.url ? ' active' : '');
+      btn.innerHTML = `
+        <span class="market-title">${m.title}</span>
+        <span class="market-url">${m.url}</span>
+      `;
+      btn.onclick = () => setMarket(m.url);
+      list.appendChild(btn);
+    });
+  }
+
+  function setMarket(url) {
+    localStorage.setItem(STORAGE_KEY, url);
+    updateStatus(url);
+    renderList();
+  }
+
+  function loadCustom() {
+    const val = document.getElementById('custom-url').value.trim();
+    if (!val) return;
+    setMarket(val);
+    document.getElementById('custom-url').value = '';
+  }
+
+  function clearMarket() {
+    localStorage.removeItem(STORAGE_KEY);
+    updateStatus('');
+    renderList();
+  }
+
+  function updateStatus(url) {
+    const dot = document.getElementById('status-dot');
+    const label = document.getElementById('status-label');
+    const slug = document.getElementById('active-slug');
+
+    if (url) {
+      dot.classList.add('live');
+      label.textContent = 'LIVE —';
+      slug.textContent = url.replace('https://polymarket.com/event/', '');
+    } else {
+      dot.classList.remove('live');
+      label.textContent = 'NO MARKET ACTIVE';
+      slug.textContent = '';
+    }
+  }
+
+  // Handle Enter key in custom input
+  document.getElementById('custom-url').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loadCustom();
+  });
+
+  // Init
+  const current = localStorage.getItem(STORAGE_KEY) || '';
+  updateStatus(current);
+  renderList();
+
+  // Keep status fresh if another tab updates storage
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) {
+      updateStatus(e.newValue || '');
+      renderList();
+    }
+  });
+</script>
+</body>
+</html>
