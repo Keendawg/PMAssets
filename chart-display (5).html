@@ -19,14 +19,15 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: 480px;
-    height: 400px;
+    transform: translate(-50%, -50%) scale(1.5);
+    transform-origin: center center;
+    width: 800px;
+    height: 500px;
   }
 
   #embed-frame {
-    width: 480px;
-    height: 400px;
+    width: 800px;
+    height: 500px;
     border: none;
     display: block;
   }
@@ -72,4 +73,52 @@
     let id = marketId.trim();
     if (id.includes('polymarket.com')) {
       id = id.split('#')[0];
-      const parts = id.split('/
+      const parts = id.split('/').filter(Boolean);
+      id = parts[parts.length - 1];
+    }
+    return `https://embed.polymarket.com/market?market=${encodeURIComponent(id)}&width=800&height=500&theme=dark`;
+  }
+
+  let currentMarket = null;
+
+  function loadMarket(marketId) {
+    const noMarket = document.getElementById('no-market');
+    let wrapper = document.getElementById('embed-wrapper');
+
+    if (marketId === currentMarket) return;
+    currentMarket = marketId;
+
+    if (!marketId) {
+      if (wrapper) wrapper.remove();
+      noMarket.style.display = 'flex';
+      return;
+    }
+
+    noMarket.style.display = 'none';
+
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.id = 'embed-wrapper';
+      const frame = document.createElement('iframe');
+      frame.id = 'embed-frame';
+      frame.allowTransparency = true;
+      wrapper.appendChild(frame);
+      document.body.appendChild(wrapper);
+    }
+
+    document.getElementById('embed-frame').src = buildEmbedUrl(marketId);
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch(`${WORKER_URL}/active-market`);
+      const data = await res.json();
+      loadMarket(data.market || '');
+    } catch (e) {}
+  }
+
+  poll();
+  setInterval(poll, 2000);
+</script>
+</body>
+</html>
