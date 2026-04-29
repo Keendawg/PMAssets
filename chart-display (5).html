@@ -20,13 +20,13 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 800px;
-    height: 600px;
+    width: 480px;
+    height: 400px;
   }
 
   #embed-frame {
-    width: 800px;
-    height: 600px;
+    width: 480px;
+    height: 400px;
     border: none;
     display: block;
   }
@@ -66,56 +66,10 @@
 </div>
 
 <script>
-  // !! Replace this with your actual Worker URL after deploying !!
   const WORKER_URL = 'https://polymarketcharts.alex-f49.workers.dev';
 
   function buildEmbedUrl(marketId) {
-    return `https://embed.polymarket.com/market?market=${encodeURIComponent(marketId)}&width=800&height=600&theme=dark`;
-  }
-
-  let currentMarket = null;
-
-  function loadMarket(marketId) {
-    const noMarket = document.getElementById('no-market');
-    let frame = document.getElementById('embed-frame');
-
-    if (marketId === currentMarket) return;
-    currentMarket = marketId;
-
-    if (!marketId) {
-      const wrapper = document.getElementById('embed-wrapper');
-    if (wrapper) wrapper.remove();
-      noMarket.style.display = 'flex';
-      return;
-    }
-
-    noMarket.style.display = 'none';
-
-    if (!frame) {
-      frame = document.createElement('iframe');
-      frame.id = 'embed-frame';
-      frame.allowTransparency = true;
-      const wrapper = document.createElement('div');
-      wrapper.id = 'embed-wrapper';
-      wrapper.appendChild(frame);
-      document.body.appendChild(wrapper);
-    }
-
-    frame.src = buildEmbedUrl(marketId);
-  }
-
-  async function poll() {
-    try {
-      const res = await fetch(`${WORKER_URL}/active-market`);
-      const data = await res.json();
-      loadMarket(data.market || '');
-    } catch (e) {
-      // Worker unreachable, do nothing
-    }
-  }
-
-  poll();
-  setInterval(poll, 2000);
-</script>
-</body>
-</html>
+    let id = marketId.trim();
+    if (id.includes('polymarket.com')) {
+      id = id.split('#')[0];
+      const parts = id.split('/
