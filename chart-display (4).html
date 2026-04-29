@@ -15,12 +15,18 @@
     font-family: 'Helvetica Neue', Helvetica, sans-serif;
   }
 
-  #embed-frame {
+  #embed-wrapper {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 1920px;
-    height: 1080px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 600px;
+  }
+
+  #embed-frame {
+    width: 800px;
+    height: 600px;
     border: none;
     display: block;
   }
@@ -64,7 +70,7 @@
   const WORKER_URL = 'https://polymarketcharts.alex-f49.workers.dev';
 
   function buildEmbedUrl(marketId) {
-    return `https://embed.polymarket.com/market?market=${encodeURIComponent(marketId)}&width=1920&height=1080&theme=dark`;
+    return `https://embed.polymarket.com/market?market=${encodeURIComponent(marketId)}&width=800&height=600&theme=dark`;
   }
 
   let currentMarket = null;
@@ -77,7 +83,8 @@
     currentMarket = marketId;
 
     if (!marketId) {
-      if (frame) frame.remove();
+      const wrapper = document.getElementById('embed-wrapper');
+    if (wrapper) wrapper.remove();
       noMarket.style.display = 'flex';
       return;
     }
@@ -88,7 +95,10 @@
       frame = document.createElement('iframe');
       frame.id = 'embed-frame';
       frame.allowTransparency = true;
-      document.body.appendChild(frame);
+      const wrapper = document.createElement('div');
+      wrapper.id = 'embed-wrapper';
+      wrapper.appendChild(frame);
+      document.body.appendChild(wrapper);
     }
 
     frame.src = buildEmbedUrl(marketId);
