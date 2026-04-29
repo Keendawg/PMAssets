@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>Eventual — Market Display</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Helvetica Neue', Helvetica, sans-serif;
+  }
+
+  #embed-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  #no-market {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #FFF30A;
+    background: #000;
+  }
+
+  #no-market .wordmark {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #FFF30A;
+    margin-bottom: 16px;
+  }
+
+  #no-market .hint {
+    font-size: 16px;
+    color: #555;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div id="no-market">
+  <div class="wordmark">EVENTUAL</div>
+  <div class="hint">No market selected — use the control panel</div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'eventual_active_market';
+
+  function buildEmbedUrl(marketUrl) {
+    const params = new URLSearchParams({
+      market: marketUrl,
+      theme: 'dark',
+      chart: '1',
+      volume: '1',
+      'buy-buttons': '0',
+      'live-activity': '0',
+      border: '0',
+    });
+    return `https://embed.polymarket.com/market?${params.toString()}`;
+  }
+
+  function loadMarket(marketUrl) {
+    const noMarket = document.getElementById('no-market');
+    let frame = document.getElementById('embed-frame');
+
+    if (!marketUrl) {
+      if (frame) frame.remove();
+      noMarket.style.display = 'flex';
+      return;
+    }
+
+    noMarket.style.display = 'none';
+
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.id = 'embed-frame';
+      frame.allowTransparency = true;
+      document.body.appendChild(frame);
+    }
+
+    frame.src = buildEmbedUrl(marketUrl);
+  }
+
+  // Read from localStorage (set by control panel)
+  function poll() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    loadMarket(stored || '');
+  }
+
+  // Also support URL hash for direct linking: chart-display.html#https://polymarket.com/...
+  const hash = decodeURIComponent(location.hash.slice(1));
+  if (hash.startsWith('http')) {
+    loadMarket(hash);
+  } else {
+    poll();
+    setInterval(poll, 1000); // poll every second for control panel updates
+  }
+
+  // Listen for storage events (cross-tab)
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) loadMarket(e.newValue || '');
+  });
+</script>
+</body>
+</html>
